@@ -1,11 +1,11 @@
 SHELL=/bin/bash
 
-.PHONY: run_back
-run_back:
-	go run -race cmd/watcher/main.go run "echo 'test'"
+.PHONY: run
+run:
+	go run -race cmd/watcher/main.go run "echo '%file%'"
 
-.PHONY: build_back build_font
-build_back:
+.PHONY: build build_font
+build:
 	bash scripts/build.sh amd64
 
 .PHONY: linter
