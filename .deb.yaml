@@ -1,0 +1,25 @@
+package: watcher
+source: watcher
+version: '1:0.0.1'
+architecture:
+  - 386
+  - amd64
+  - arm
+  - arm64
+maintainer: DewepOnline <deb@dewep.online>
+homepage: https://dewep.online/watcher.html
+description:
+  - Execute a command when changing files
+section: web
+priority: optional
+control:
+  depends:
+    - systemd
+    - ca-certificates
+  build: scripts/build.sh
+  preinst: scripts/preinst.sh
+  postinst: scripts/postinst.sh
+  prerm: scripts/prerm.sh
+  postrm: scripts/postrm.sh
+data:
+  usr/bin/watcher: build/bin/watcher_%arch%
