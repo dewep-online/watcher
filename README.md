@@ -11,3 +11,23 @@
 ```go
  go get -u github.com/dewep-online/watcher/cmd/... 
 ```
+
+# how use
+
+with default interval = 10s
+
+```bash
+watcher run <command>
+```
+
+with custom interval = 30s
+
+```bash
+watcher run --interval=30 <command>
+```
+
+# example
+
+```bash
+watcher run ping 1.1.1.1
+```

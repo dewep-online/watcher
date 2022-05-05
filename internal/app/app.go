@@ -16,7 +16,7 @@ import (
 func RunApp() console.CommandGetter {
 	return console.NewCommand(func(setter console.CommandSetter) {
 		setter.Setup("run", "executing a command on file changes")
-		setter.Example(`run --interval=30 "echo '%file%'"`)
+		setter.Example(`run --interval=30 "echo 'hello'"`)
 		setter.Argument(1, nil)
 		setter.Flag(func(fs console.FlagsSetter) {
 			fs.IntVar("interval", 10, "restart interval on changes")
