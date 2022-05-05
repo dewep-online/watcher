@@ -2,52 +2,80 @@ package notify
 
 import (
 	"context"
-	"io/fs"
-	"path/filepath"
-	"strings"
+	"fmt"
+	"sync/atomic"
+	"time"
 
 	"github.com/deweppro/go-app/console"
 	"github.com/fsnotify/fsnotify"
 )
 
-func New(ctx context.Context, dir string, c chan string) {
-	watcher, err := fsnotify.NewWatcher()
-	console.FatalIfErr(err, "init watcher")
-	defer watcher.Close()
-
-	go handler(ctx, watcher, c)
-
-	err = filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-		if info.Mode().IsDir() && !strings.Contains(path, "/.") {
-			return watcher.Add(path)
-		}
-		return nil
-	})
-	console.FatalIfErr(err, "add dir [%s] for watch", dir)
-
-	<-ctx.Done()
+type Notify struct {
+	watcher *fsnotify.Watcher
+	handler func(ctx context.Context)
 }
 
-func handler(ctx context.Context, w *fsnotify.Watcher, c chan string) {
-	for {
-		select {
-		case <-ctx.Done():
-			return
-
-		case event, ok := <-w.Events:
-			if !ok {
-				return
-			}
-			if event.Op&fsnotify.Write == fsnotify.Write {
-				c <- event.Name
-				console.Infof("%+v", event.Name)
-			}
-
-		case err, ok := <-w.Errors:
-			if !ok {
-				return
-			}
-			console.Errorf(err.Error())
-		}
+func New() (*Notify, error) {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		return nil, fmt.Errorf("init watcher: %w", err)
 	}
+	return &Notify{
+		watcher: watcher,
+	}, nil
+}
+
+func (v *Notify) Path(path string) error {
+	return v.watcher.Add(path)
+}
+
+func (v *Notify) Handler(cb func(ctx context.Context)) {
+	v.handler = cb
+}
+
+func (v *Notify) Run(ctx context.Context, ival int64) error {
+	tick := time.NewTicker(time.Second * time.Duration(ival))
+	defer tick.Stop()
+
+	func() {
+		var change int32 = 0
+
+		ctx0, cncl0 := context.WithCancel(ctx)
+		go v.handler(ctx0)
+
+		for {
+			select {
+			case <-tick.C:
+				if atomic.CompareAndSwapInt32(&change, 1, 0) {
+					cncl0()
+					<-ctx0.Done()
+
+					ctx0, cncl0 = context.WithCancel(ctx)
+					go v.handler(ctx0)
+				}
+
+			case <-ctx.Done():
+				cncl0()
+				return
+
+			case ev, ok := <-v.watcher.Events:
+				if !ok {
+					cncl0()
+					return
+				}
+				if ev.Op&fsnotify.Write == fsnotify.Write {
+					atomic.CompareAndSwapInt32(&change, 0, 1)
+				}
+
+			case ev, ok := <-v.watcher.Errors:
+				if !ok {
+					cncl0()
+					return
+				}
+				console.Errorf(ev.Error())
+			}
+		}
+	}()
+
+	return v.watcher.Close()
 }

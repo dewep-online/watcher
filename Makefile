@@ -2,7 +2,7 @@ SHELL=/bin/bash
 
 .PHONY: run
 run:
-	go run -race cmd/watcher/main.go run "echo '%file%'"
+	go run -race cmd/watcher/main.go run ping 1.1.1.1
 
 .PHONY: build build_font
 build:
@@ -20,6 +20,6 @@ tests:
 ci:
 	bash scripts/ci.sh
 
-.PHONY: ci
+.PHONY: deb
 deb: 
 	deb-builder build
