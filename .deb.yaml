@@ -6,11 +6,10 @@ architecture:
   - amd64
   - arm
   - arm64
-maintainer: User <user@example.com>
-homepage: https://example.com/
+maintainer: DewepOnline <deb@dewep.online>
+homepage: https://dewep.online/watcher.html
 description:
-  - Заголовок описания пакета
-  - Подробное описание пакета
+  - Execute a command when changing files
 section: web
 priority: optional
 control:
